@@ -1,4 +1,4 @@
-package com.iioannou.jwt.auth.exception;
+package com.iioannou.jwt.auth.exception.exceptions;
 
 import java.util.function.Supplier;
 

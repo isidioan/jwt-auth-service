@@ -1,7 +1,7 @@
 package com.iioannou.jwt.auth.service;
 
-import com.iioannou.jwt.auth.exception.TokenExpiredException;
-import com.iioannou.jwt.auth.exception.TokenInvalidException;
+import com.iioannou.jwt.auth.exception.exceptions.TokenExpiredException;
+import com.iioannou.jwt.auth.exception.exceptions.TokenInvalidException;
 import com.iioannou.jwt.auth.util.JwtConfigUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
