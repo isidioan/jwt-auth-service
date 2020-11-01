@@ -3,6 +3,7 @@ package com.iioannou.jwt.auth.service;
 import com.iioannou.jwt.auth.exception.exceptions.TokenExpiredException;
 import com.iioannou.jwt.auth.exception.exceptions.TokenInvalidException;
 import com.iioannou.jwt.auth.util.JwtConfigUtil;
+import com.iioannou.jwt.auth.util.ValidationUtils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -13,14 +14,19 @@ import io.jsonwebtoken.security.SignatureException;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
+import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpHeaders;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
@@ -59,7 +65,7 @@ public class JwtIssuanceService {
     }
 
 
-    public String generateToken(Authentication authentication) {
+    public String generateAccessToken(Authentication authentication) {
 
         long now = System.currentTimeMillis();
 
@@ -72,15 +78,26 @@ public class JwtIssuanceService {
     }
 
 
+    public String generateRefreshToken(String subject) {
+
+        long now = System.currentTimeMillis();
+
+        return Jwts.builder().setSubject(subject)
+                   .setIssuer(jwtConfigUtil.getTokenIssuer())
+                   .setIssuedAt(new Date(now))
+                   .setExpiration(new Date(jwtConfigUtil.getRefreshTokenExpiration() + now))
+                   .signWith(getSigningKey()).compact();
+    }
+
+
     public boolean validateToken(String token) {
 
         try {
-
             String username = getTokenUsername(token);
 
-            userDetailsService.loadUserByUsername(username);
+            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-            return true;
+            return username.equals(userDetails.getUsername());
 
         } catch (IllegalArgumentException | UnsupportedJwtException | MalformedJwtException | SignatureException e) {
 
@@ -109,6 +126,28 @@ public class JwtIssuanceService {
 
     private Date getTokenExpiration(String token) {
         return getClaimFromToken(token, Claims::getExpiration);
+    }
+
+    public String extractToken(HttpHeaders headers) {
+        String tokenHeader = headers.getFirst(jwtConfigUtil.getHeader());
+
+        ValidationUtils.requireNonBlank(tokenHeader, () -> "A bearer token must be present");
+
+        return tokenHeader.substring(jwtConfigUtil.getPrefix().length());
+    }
+
+
+    public String generateNewAccessToken(Claims claims, String refreshToken) {
+        String userNameFromRefreshToken = getTokenUsername(refreshToken);
+        String userName = claims.getSubject();
+
+        if (userName.equals(userNameFromRefreshToken)) {
+
+            return generateAccessToken(new UsernamePasswordAuthenticationToken(userName, null,
+                    AuthorityUtils.commaSeparatedStringToAuthorityList(String.join(",", ((List<String>) claims.get("roles"))))));
+        } else {
+            throw new TokenInvalidException(() -> "Refresh token is invalid");
+        }
     }
 
 }

@@ -20,8 +20,11 @@ public class JwtConfigUtil {
     @Value("${security.jwt.prefix:Bearer }")
     private String prefix;
 
-    @Value("${security.jwt.expiration:#{24*60*60}}")
+    @Value("${security.jwt.expiration:#{15*60*1000}}")
     private int expiration;
+
+    @Value("${security.jwt.refresh.token.expiration:#{4*60*60*1000}}")
+    private int refreshTokenExpiration;
 
     @Value("${security.jwt.secret:You have a deep, dark fear of spiders, circa 1990}")
     private String secret;

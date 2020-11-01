@@ -42,7 +42,7 @@ public class AuthSecurityConfig extends WebSecurityConfigurerAdapter {
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 // handle an authorized attempts
-                .exceptionHandling().accessDeniedHandler((req, rsp, e) -> {
+                .exceptionHandling().authenticationEntryPoint((req, rsp, e) -> {
             logger.info("{}", "Authentication failed");
             rsp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
         })
@@ -53,7 +53,7 @@ public class AuthSecurityConfig extends WebSecurityConfigurerAdapter {
                 // An object provided by WebSecurityConfigurerAdapter, used to authenticate the user passing user's credentials
                 .authorizeRequests()
                 // allow all POST requests
-                .antMatchers(HttpMethod.POST, configUtil.getUri()).permitAll()
+                .antMatchers(HttpMethod.POST, "/auth/**").permitAll()
                 // any other requests must be authenticated
                 .anyRequest().authenticated();
     }
