@@ -2,6 +2,7 @@ package com.iioannou.jwt.auth.authconfig;
 
 import com.iioannou.jwt.auth.util.JwtConfigUtil;
 import javax.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -23,6 +24,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class AuthSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
+    private Logger logger;
+
+    @Autowired
     @Qualifier("userService")
     private UserDetailsService userDetailsService;
 
@@ -38,7 +42,10 @@ public class AuthSecurityConfig extends WebSecurityConfigurerAdapter {
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 // handle an authorized attempts
-                .exceptionHandling().authenticationEntryPoint((req, rsp, e) -> rsp.sendError(HttpServletResponse.SC_UNAUTHORIZED))
+                .exceptionHandling().accessDeniedHandler((req, rsp, e) -> {
+            logger.info("{}", "Authentication failed");
+            rsp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        })
                 .and()
                 // Add a filter to validate user credentials and add token in the response header
 

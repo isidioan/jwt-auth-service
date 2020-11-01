@@ -2,6 +2,7 @@ package com.iioannou.jwt.auth.endpoint;
 
 import com.iioannou.jwt.auth.domain.dto.AuthenticationData;
 import com.iioannou.jwt.auth.service.JwtIssuanceService;
+import com.iioannou.jwt.auth.util.ValidationUtils;
 import java.util.Collections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -44,6 +45,15 @@ public class AuthController {
         String token = jwtIssuanceService.generateToken(authentication);
 
         return ResponseEntity.ok(token);
+
+    }
+
+    @PostMapping(value = "/validate", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Boolean> validateRequest(@RequestBody String token) {
+
+        ValidationUtils.requireNonEmpty(token, () -> "token should be provided");
+        boolean result = jwtIssuanceService.validateToken(token);
+        return ResponseEntity.ok(result);
 
     }
 
